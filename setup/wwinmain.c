@@ -581,12 +581,11 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 			dwPort = strtoul(szPrt, NULL, 10);
 
-			if(mysql_real_connect(conn, szSrv, szUsr, szPwd, NULL, dwPort, NULL, 0) == NULL)
+			if (!TestMySQLSettings(hEdtServer, hEdtRoot, hEdtPass, hEdtPort))
 			{
-				MessageBoxW(NULL, L"Could not connect to the Aurora database with the provided settings.", L"Monocle Installer", MB_OK | MB_ICONWARNING);
+				MessageBoxW(NULL, L"Could not connect to the Aurora database with the provided settings.", L"Monocle Instaler", MB_OK | MB_ICONWARNING);
 				break;
 			}
-
 			else
 			{
 				INT nLen = GetWindowTextLengthW(hEdtPath) + 1;
