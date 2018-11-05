@@ -427,13 +427,13 @@ BOOL WINAPI TestMySQLSettings(HWND hEdtSrv, HWND hEdtUsr, HWND hEdtPass, HWND hE
 		StringCchCopyA(szQuery, 400, "USE mondb");
 		mysql_query(conn, szQuery);
 		ZeroMemory(szQuery, 400);
-		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS screenshot (ssid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, pngbytes mediumblob NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(ssid), UNIQUE KEY origin (origin,dt)) ENGINE=InnoDB");
+		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.screenshot (ssid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, pngbytes mediumblob NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(ssid), UNIQUE KEY origin (origin,dt)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
 		ZeroMemory(szQuery, 400);
-		StringCchCopyA(szQuery, 400, "CREATE TABLE trafficlog (tlid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, url varchar(64) NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (tlid), UNIQUE KEY uq_idx_sitepervisit (origin,url,dt)) ENGINE=InnoDB");
+		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.trafficlog (tlid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, url varchar(64) NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (tlid), UNIQUE KEY uq_idx_sitepervisit (origin,url,dt)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
 		ZeroMemory(szQuery, 400);
-		StringCchCopyA(szQuery, 400, "CREATE TABLE windowtitles (wtid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, titlelist text NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (wtid)) ENGINE=InnoDB");
+		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.windowtitles (wtid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, titlelist text NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (wtid)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
 		fConnectSucceeded = TRUE;
 	}
