@@ -115,13 +115,14 @@ VOID WINAPI StripIllegalChars(CHAR *szIn, CHAR *szOut, SIZE_T cb)
 	}
 }
 
-// Expects a MYSQL *object that is already connected as root
-DWORD WINAPI CreateWriteAccount(MYSQL **conn, CHAR *szAccName, SIZE_T cbAccName, CHAR *szCreatedPass, SIZE_T cbCreatedPass)
+ DWORD WINAPI CreateWriteAccount(CHAR *szHost, CHAR *szUser, CHAR *szConnectingPass, DWORD dwPort, CHAR *szAccName, SIZE_T cbAccName, CHAR *szCreatedPass, SIZE_T cbCreatedPass)
+//DWORD WINAPI CreateWriteAccount(MYSQL **conn, CHAR *szAccName, SIZE_T cbAccName, CHAR *szCreatedPass, SIZE_T cbCreatedPass)
 {
 	HCRYPTPROV hProv;
 	CHAR szQuery[200], szCompName[16], szCleanCompName[16];
 	CONST CHAR szTable[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678900";
 	SIZE_T i;
+	MYSQL *conn = mysql_init(NULL);
 
 	GetEnvironmentVariableA("COMPUTERNAME", szCompName, 16);
 	StripIllegalChars(szCompName, szCleanCompName, 16);
@@ -145,27 +146,41 @@ DWORD WINAPI CreateWriteAccount(MYSQL **conn, CHAR *szAccName, SIZE_T cbAccName,
 
 	szCreatedPass[cbCreatedPass - 1] = '\0';
 
-	StringCchPrintfA(szQuery, 200, "CREATE USER IF NOT EXISTS \'%s\'@\'%%\' IDENTIFIED BY \'%s\'", szAccName, szCreatedPass);
-	mysql_query(*conn, szQuery);
+	if (mysql_real_connect(conn, szHost, szUser, szConnectingPass, "mondb", dwPort, NULL, 0) == NULL)
+	{
+		return ERROR_DATABASE_FAILURE;
+	}
+
+	StringCchCopyA(szQuery, 200, "DELETE FROM mysql.`user` WHERE `user`.`User` = 'mnclread' LIMIT 1");
+	mysql_query(conn, szQuery);
 
 	ZeroMemory(szQuery, 200);
+	StringCchPrintfA(szQuery, 200, "CREATE USER \'%s\'@\'%%\' IDENTIFIED BY \'%s\'", szAccName, szCreatedPass);
+	mysql_query(conn, szQuery);
+	
+	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "ALTER USER \'%s\'@\'%%\' IDENTIFIED BY \'%s\'", szAccName, szCreatedPass);
-	mysql_query(*conn, szQuery);
+	mysql_query(conn, szQuery);
 
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "GRANT INSERT ON mondb.* TO \'%s\'@\'%%\' IDENTIFIED BY \'%s\'", szAccName, szCreatedPass);
-	mysql_query(*conn, szQuery);
-	
+	mysql_query(conn, szQuery);
+
 	ZeroMemory(szQuery, 200);
 	StringCchCopyA(szQuery, 200, "FLUSH PRIVILEGES");
-	mysql_query(*conn, szQuery);
+	mysql_query(conn, szQuery);
+
+
+	mysql_close(conn);
 
 	return ERROR_SUCCESS;
 }
 
 // Expects a MYSQL *object that is already connected as root
-DWORD WINAPI CreateReadAccount(MYSQL **conn, CHAR *szCreatedPass, SIZE_T cbCreatedPass)
+DWORD WINAPI CreateReadAccount(CHAR *szHost, CHAR *szUser, CHAR *szConnectingPass, DWORD dwPort, CHAR *szCreatedPass, SIZE_T cbCreatedPass)
 {
+	MYSQL *conn = mysql_init(NULL);
+
 	HCRYPTPROV hProv;
 	CHAR szQuery[200];
 	CONST CHAR szTable[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ12345678900";
@@ -178,6 +193,9 @@ DWORD WINAPI CreateReadAccount(MYSQL **conn, CHAR *szCreatedPass, SIZE_T cbCreat
 		return dwError;
 	}
 
+	if (mysql_real_connect(conn, szHost, szUser, szConnectingPass, "mondb", dwPort, NULL, 0) == NULL)
+		return ERROR_DATABASE_FAILURE;
+
 	// Step 1: Create the password
 	for(i = 0; i < cbCreatedPass - 1; i++)
 	{
@@ -188,20 +206,23 @@ DWORD WINAPI CreateReadAccount(MYSQL **conn, CHAR *szCreatedPass, SIZE_T cbCreat
 
 	szCreatedPass[cbCreatedPass - 1] = '\0';
 
-	StringCchPrintfA(szQuery, 200, "CREATE USER IF NOT EXISTS \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
-	mysql_query(*conn, szQuery);
+	StringCchPrintfA(szQuery, 200, "CREATE USER \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
+	mysql_query(conn, szQuery);
+	MessageBoxA(NULL, szQuery, "", MB_OK);
 
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "ALTER USER \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
-	mysql_query(*conn, szQuery);
+	mysql_query(conn, szQuery);
 
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "GRANT SELECT ON mondb.* TO \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
-	mysql_query(*conn, szQuery);
-	
+	mysql_query(conn, szQuery);
+
 	ZeroMemory(szQuery, 200);
 	StringCchCopyA(szQuery, 200, "FLUSH PRIVILEGES");
-	mysql_query(*conn, szQuery);
+	mysql_query(conn, szQuery);
+
+	mysql_close(conn);
 
 	return ERROR_SUCCESS;
 }
@@ -431,18 +452,23 @@ BOOL WINAPI TestMySQLSettings(HWND hEdtSrv, HWND hEdtUsr, HWND hEdtPass, HWND hE
 		CHAR szQuery[400];
 		StringCchCopyA(szQuery, 400, "CREATE DATABASE IF NOT EXISTS mondb");
 		mysql_query(conn, szQuery);
+
 		ZeroMemory(szQuery, 400);
 		StringCchCopyA(szQuery, 400, "USE mondb");
 		mysql_query(conn, szQuery);
+
 		ZeroMemory(szQuery, 400);
 		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.screenshot (ssid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, pngbytes mediumblob NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(ssid), UNIQUE KEY origin (origin,dt)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
+
 		ZeroMemory(szQuery, 400);
 		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.trafficlog (tlid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, url varchar(64) NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (tlid), UNIQUE KEY uq_idx_sitepervisit (origin,url,dt)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
+
 		ZeroMemory(szQuery, 400);
 		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS mondb.windowtitles (wtid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, titlelist text NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (wtid)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
+
 		fConnectSucceeded = TRUE;
 	}
 	mysql_close(conn);
@@ -548,9 +574,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 			INT nLenSrv, nLenUsr, nLenPwd, nLenPrt;
 			CHAR *szSrv, *szUsr, *szPwd, *szPrt;
 			DWORD dwPort;
-			MYSQL *conn;
+			BOOL fTest;
+			
+			fTest = TestMySQLSettings(hEdtServer, hEdtRoot, hEdtPass, hEdtPort);
 
-			conn = mysql_init(NULL);
 
 			nLenSrv = GetWindowTextLengthA(hEdtServer) + 1;
 			nLenUsr = GetWindowTextLengthA(hEdtRoot) + 1;
@@ -581,7 +608,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 			dwPort = strtoul(szPrt, NULL, 10);
 
-			if (!TestMySQLSettings(hEdtServer, hEdtRoot, hEdtPass, hEdtPort))
+			if (!fTest)
 			{
 				MessageBoxW(NULL, L"Could not connect to the Aurora database with the provided settings.", L"Monocle Instaler", MB_OK | MB_ICONWARNING);
 				break;
@@ -645,7 +672,10 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 					ZeroMemory(wszDestFile, MAX_PATH * sizeof(WCHAR));
 					StringCchCopyW(wszDestFile, MAX_PATH, wszPath);
 					StringCchCatW(wszDestFile, MAX_PATH, L"sys\\");
-					CreateWriteAccount(&conn, szAccName, 20, szWritePass, 20);
+
+					CreateWriteAccount(szSrv, szUsr, szPwd, dwPort, szAccName, 20, szWritePass, 20);
+
+					//CreateWriteAccount(&conn, szAccName, 20, szWritePass, 20);
 					dwInterval = TimeBetweenTicks(hEdtHours, hEdtMins);
 					if(dwInterval > 0)
 					{
@@ -655,6 +685,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 						MessageBoxW(NULL, L"Monocle monitoring module is installed and will begin running at the next user log on on this system.", L"Monocle Installer", MB_OK | MB_ICONASTERISK);
 
 					}
+					
 				}
 				else
 				{
@@ -685,7 +716,7 @@ INT_PTR CALLBACK DialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 					CopyFileW(L".\\unins000.exe", wszDestFile, FALSE);
 
-					CreateReadAccount(&conn, szReadAcct, 20);
+					CreateReadAccount(szSrv, szUsr, szPwd, dwPort, szReadAcct, 20);
 					SetReadAccountCreds(szSrv, szReadAcct, dwPort);
 
 					MessageBoxW(NULL, L"Log viewer installation complete. It is now available on your Start Menu.", L"Monocle Installer", MB_OK | MB_ICONASTERISK);
