@@ -95,7 +95,7 @@ LSTATUS WINAPI CreateRegistryEntry(CHAR *szServer, CHAR *szWrite, CHAR *szPass, 
 	lsResult = RegSetValueExA(hKey, "Port", 0, REG_DWORD, (LPBYTE)&dwPort, sizeof(DWORD));
 	lsResult = RegSetValueExA(hKey, "TickInterval", 0, REG_DWORD, (LPBYTE)&dwIntervalS, sizeof(DWORD)); 
 
-	ReplaceACLWithSingleACE(L"MACHINE\\SOFTWARE\\GovindParmar\\MONOCLE", SE_REGISTRY_KEY, L"NT AUTHORITY\\SYSTEM");
+	//ReplaceACLWithSingleACE(L"MACHINE\\SOFTWARE\\GovindParmar\\MONOCLE", SE_REGISTRY_KEY, L"NT AUTHORITY\\SYSTEM");
 
 	return ERROR_SUCCESS;
 }
