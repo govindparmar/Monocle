@@ -357,12 +357,17 @@ VOID WINAPI PopulateComboBox(HWND hComboBox)
 	mysql_query(conn, szQuery);
 
 	res = mysql_store_result(conn);
-
+	if (mysql_num_rows(res) <= 0)
+	{
+		MessageBoxA(NULL, "Your database is empty (no entries found).", "Monocle Log Viewer", MB_OK | MB_ICONASTERISK);
+		goto cleanup;
+	}
 	while(row = mysql_fetch_row(res))
 	{
 		SendMessageA(hComboBox, CB_ADDSTRING, 0, (LPARAM)row[0]);
 	}
 	SendMessageA(hComboBox, CB_SETCURSEL, 0, 0);
+cleanup:
 	mysql_free_result(res);
 	mysql_close(conn);
 }
