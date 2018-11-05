@@ -424,6 +424,9 @@ BOOL WINAPI TestMySQLSettings(HWND hEdtSrv, HWND hEdtUsr, HWND hEdtPass, HWND hE
 		StringCchCopyA(szQuery, 400, "CREATE DATABASE IF NOT EXISTS mondb");
 		mysql_query(conn, szQuery);
 		ZeroMemory(szQuery, 400);
+		StringCchCopyA(szQuery, 400, "USE mondb");
+		mysql_query(conn, szQuery);
+		ZeroMemory(szQuery, 400);
 		StringCchCopyA(szQuery, 400, "CREATE TABLE IF NOT EXISTS screenshot (ssid int(11) NOT NULL AUTO_INCREMENT, origin varchar(64) NOT NULL, pngbytes mediumblob NOT NULL, dt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(ssid), UNIQUE KEY origin (origin,dt)) ENGINE=InnoDB");
 		mysql_query(conn, szQuery);
 		ZeroMemory(szQuery, 400);
