@@ -155,6 +155,10 @@ DWORD WINAPI CreateWriteAccount(MYSQL **conn, CHAR *szAccName, SIZE_T cbAccName,
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "GRANT INSERT ON mondb.* TO \'%s\'@\'%%\' IDENTIFIED BY \'%s\'", szAccName, szCreatedPass);
 	mysql_query(*conn, szQuery);
+	
+	ZeroMemory(szQuery, 200);
+	StringCchCopyA(szQuery, 200, "FLUSH PRIVILEGES");
+	mysql_query(*conn, szQuery);
 
 	return ERROR_SUCCESS;
 }
@@ -193,6 +197,10 @@ DWORD WINAPI CreateReadAccount(MYSQL **conn, CHAR *szCreatedPass, SIZE_T cbCreat
 
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "GRANT SELECT ON mondb.* TO \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
+	mysql_query(*conn, szQuery);
+	
+	ZeroMemory(szQuery, 200);
+	StringCchCopyA(szQuery, 200, "FLUSH PRIVILEGES");
 	mysql_query(*conn, szQuery);
 
 	return ERROR_SUCCESS;
