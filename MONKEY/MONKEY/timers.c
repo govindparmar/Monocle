@@ -23,8 +23,6 @@ DWORD CALLBACK TimerWrapThread(LPVOID lpHinstance)
 	hWnd = CreateWindowExW(0, g_wszClassName, L"", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInstance, NULL);
 	ShowWindow(hWnd, SW_HIDE);
 
-
-
 	SetTimer(hWnd, IDT_TIMER1, opt.dwInterval, TimerProc1);
 	SetTimer(hWnd, IDT_TIMER2, opt.dwInterval, TimerProc2);
 
@@ -49,7 +47,7 @@ VOID CALLBACK TimerProc1(
 	DWORD dwSessionID;
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
-	WCHAR wAppPath[MAX_PATH], wzAppDir[MAX_PATH], wzUserDir[MAX_PATH];
+	CHAR wAppPath[MAX_PATH];
 	PROGRAM_OPTIONS opt;
 	UINT uLen;
 
@@ -68,14 +66,21 @@ VOID CALLBACK TimerProc1(
 	ReadRegistrySettings(&opt);
 	StringCchLengthA(opt.wUserDir, MAX_PATH, &uLen);
 
-	// Avoid double trailing slash error
-	if(opt.wUserDir[uLen - 1] == '\\')
-		opt.wUserDir[uLen - 1] = '\0';
+	StringCchLengthA(opt.wUserDir, MAX_PATH, &uLen);
 
-	MultiByteToWideChar(CP_ACP, 0, opt.wAppDir, -1, wzAppDir, MAX_PATH);
-	MultiByteToWideChar(CP_ACP, 0, opt.wUserDir, -1, wzUserDir, MAX_PATH);
-	StringCchPrintfW(wAppPath, MAX_PATH, L"%S\\mticker.exe", opt.wUserDir);
-	CreateProcessAsUserW(hDupToken, wAppPath, L"", NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, wzAppDir, &si, &pi);
+	StringCchPrintfA(wAppPath, MAX_PATH, "%smticker.exe", opt.wUserDir);
+	/*{
+		UINT uLen;
+		DWORD dwWritten;
+		HANDLE hFile = CreateFileA("C:\\Temp\\mdbg.txt", GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		BYTE bBom[2] = { 0xFF, 0xFE };
+		StringCbLengthW(wAppPath, MAX_PATH * sizeof(WCHAR), &uLen);
+		WriteFile(hFile, bBom, 2, &dwWritten, NULL);
+		SetFilePointer(hFile, 0, NULL, FILE_END);
+		WriteFile(hFile, wAppPath, uLen, &dwWritten, NULL);
+		CloseHandle(hFile);
+	}*/
+	CreateProcessAsUserA(hDupToken, wAppPath, opt.wUserDir, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, opt.wUserDir, &si, &pi);
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	RevertToSelf();
 
