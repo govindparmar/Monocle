@@ -29,7 +29,8 @@ DWORD WINAPI UserDirectoryWatchThread(LPVOID lpWideInfo)
 				{
 					do
 					{
-						if((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY && _wcsicmp(wfd.cFileName, L"mticker.exe") != 0)
+						if((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != FILE_ATTRIBUTE_DIRECTORY && _wcsicmp(wfd.cFileName, L"mticker.exe") != 0
+							&& _wcsicmp(wfd.cFileName, L"mview.exe") != 0 && _wcsicmp(wfd.cFileName, L"libmysql.dll") != 0 && _wcsicmp(wfd.cFileName, L"unins000.exe") != 0)
 						{
 							Sleep(750);
 							hCopyFile = CreateFileW(wfd.cFileName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
