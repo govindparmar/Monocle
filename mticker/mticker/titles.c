@@ -47,14 +47,20 @@ INT APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 {
 	HANDLE hFile;// = CreateFileW(L"C:\\Temp\\DumpDir\\titles.txt", GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	SYSTEMTIME st;
-	WCHAR wFileName[MAX_PATH];
+	WCHAR wFileName[MAX_PATH], wSavePath[MAX_PATH];
+	DWORD cbPath = MAX_PATH * sizeof(WCHAR);
 	DWORD dwWritten = 0;
+	HKEY hKey;
+
+	RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\GovindParmar\\MONOCLE", 0, KEY_READ, &hKey);
+	RegQueryValueExW(hKey, L"UserDir", NULL, NULL, (LPBYTE)wSavePath, &cbPath);
+	RegCloseKey(hKey);
 
 	GetLocalTime(&st);
 	StringCchPrintfW(wFileName, MAX_PATH, L"%.4hu-%.2hu-%.2hu-%.2hu-%.2hu-%.2hu.txt", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute, st.wSecond);
 	hFile = CreateFileW(wFileName, GENERIC_WRITE | GENERIC_READ, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	EnumWindows(EnumProc, (LPARAM)&hFile);
 	CloseHandle(hFile);
-	SaveBitmap(L"C:\\Temp\\MONKEY\\Usr", st);
+	SaveBitmap(wSavePath, st);
 	return 0;
 }
