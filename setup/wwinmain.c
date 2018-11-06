@@ -205,11 +205,15 @@ DWORD WINAPI CreateReadAccount(CHAR *szHost, CHAR *szUser, CHAR *szConnectingPas
 	}
 
 	szCreatedPass[cbCreatedPass - 1] = '\0';
+	StringCchPrintfA(szQuery, 200, "DELETE FROM mysql.`user` WHERE `user`.`User` = \'mnclread\' LIMIT 1");
+	mysql_query(conn, szQuery);
 
+
+	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "CREATE USER \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
 	mysql_query(conn, szQuery);
-	MessageBoxA(NULL, szQuery, "", MB_OK);
-
+		//MessageBoxA(NULL, mysql_error(conn), "", MB_OK);
+	
 	ZeroMemory(szQuery, 200);
 	StringCchPrintfA(szQuery, 200, "ALTER USER \'mnclread\'@\'%%\' IDENTIFIED BY \'%s\'", szCreatedPass);
 	mysql_query(conn, szQuery);
