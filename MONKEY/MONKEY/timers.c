@@ -45,17 +45,17 @@ VOID CALLBACK TimerProc1(
 {
 	HANDLE hToken, hDupToken;
 	DWORD dwSessionID;
-	STARTUPINFO si;
+	STARTUPINFOA si;
 	PROCESS_INFORMATION pi;
 	CHAR wAppPath[MAX_PATH];
 	PROGRAM_OPTIONS opt;
 	UINT uLen;
 
-	ZeroMemory(&si, sizeof(STARTUPINFO));
+	ZeroMemory(&si, sizeof(STARTUPINFOA));
 	ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 
-	si.cb = sizeof(STARTUPINFO);
-	si.lpDesktop = L"winsta0\\default";
+	si.cb = sizeof(STARTUPINFOA);
+	si.lpDesktop = "winsta0\\default";
 
 	dwSessionID = WTSGetActiveConsoleSessionId();
 	WTSQueryUserToken(dwSessionID, &hToken);
