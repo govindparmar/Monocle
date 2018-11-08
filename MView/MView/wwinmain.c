@@ -343,13 +343,14 @@ VOID WINAPI SwapVisibility(HWND hDlg, HWND hHide, HWND hShow)
 	RedrawWindow(hDlg, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
 }
 
-VOID WINAPI PopulateComboBox(HWND hComboBox)
+BOOL WINAPI PopulateComboBox(HWND hComboBox)
 {
 	MYSQL *conn = NULL;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	CHAR szQuery[200];
 	HINSTANCE hInstance = GetModuleHandleW(NULL);
+	BOOL fEntries = FALSE;
 
 	conn = mysql_init(NULL);
 	mysql_real_connect(conn, g_readCreds.szServer, g_readCreds.szUser, g_readCreds.szPass, "mondb", 0, NULL, 0);
@@ -359,8 +360,11 @@ VOID WINAPI PopulateComboBox(HWND hComboBox)
 	res = mysql_store_result(conn);
 	if (mysql_num_rows(res) <= 0)
 	{
-		MessageBoxA(NULL, "Your database is empty (no entries found).", "Monocle Log Viewer", MB_OK | MB_ICONASTERISK);
 		goto cleanup;
+	}
+	else
+	{
+		fEntries = TRUE;
 	}
 	while(row = mysql_fetch_row(res))
 	{
@@ -370,6 +374,8 @@ VOID WINAPI PopulateComboBox(HWND hComboBox)
 cleanup:
 	mysql_free_result(res);
 	mysql_close(conn);
+
+	return fEntries;
 }
 INT_PTR CALLBACK DialogProc2(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -604,11 +610,15 @@ INT_PTR CALLBACK DialogProc1(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 			}
 			return (INT_PTR)TRUE;
 		case WM_INITDIALOG:
-			PopulateComboBox(hCbx);
+			if (PopulateComboBox(hCbx) == FALSE)
+			{
+				MessageBoxA(NULL, "Your database is empty (no entries found).", "Monocle Log Viewer", MB_OK | MB_ICONASTERISK);
+				EndDialog(hDlg, (INT_PTR)0);
+			}
 			return (INT_PTR)TRUE;
 		case WM_CLOSE:
 		case WM_DESTROY:
-			EndDialog(hDlg, (INT_PTR)0);
+			EndDialog(hDlg, (INT_PTR)0);	
 		default:
 			return (INT_PTR)FALSE;
 	}
