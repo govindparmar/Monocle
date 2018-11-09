@@ -85,7 +85,7 @@ DWORD WINAPI LoadASCIIFile(
 	
 	*cbBuffer = liSize.LowPart;
 
-	*szBuffer = (CHAR *)HeapAlloc(hHeap, 0, *cbBuffer);
+	*szBuffer = (CHAR *)HeapAlloc(hHeap, HEAP_ZERO_MEMORY, 1 + *cbBuffer);
 	ReadFile(hFile, *szBuffer, *cbBuffer, &dwRead, NULL);
 	if(dwRead != *cbBuffer)
 	{
